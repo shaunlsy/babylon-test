@@ -40,18 +40,36 @@
           // Create a basic BJS Scene object.
           var scene = new BABYLON.Scene(engine);
 
+          var camera = new BABYLON.FollowCamera("FollowCam", new BABYLON.Vector3(0, 10, 40), scene);
+
+          camera.radius = 20;
+
+          // The goal height of camera above local origin (centre) of target
+          camera.heightOffset = 20;
+
+          // The goal rotation of camera around local origin (centre) of target in x y plane
+          camera.rotationOffset = 240;
+
+          // Acceleration of camera in moving from current to goal position
+          camera.cameraAcceleration = 0.1
+
+          // The speed at which acceleration is halted
+          camera.maxCameraSpeed = 1
+
+          // This attaches the camera to the canvas
+          camera.attachControl(canvas, false);
           // Create a FreeCamera, and set its position to (x:0, y:5, z:-10).
-          var camera = new BABYLON.FreeCamera(
-            "camera",
-            new BABYLON.Vector3(0, 5, -10),
-            scene
-          );
+          // var camera = new BABYLON.FreeCamera(
+          //   "camera",
+          //   new BABYLON.Vector3(0, 5, -10),
+          //   scene
+          // );
 
           // Target the camera to scene origin.
-          camera.setTarget(BABYLON.Vector3.Zero());
+          // camera.setTarget(BABYLON.Vector3.Zero());
 
           // Attach the camera to the canvas.
-          camera.attachControl(canvas, false);
+          // camera.attachControl(canvas, false);
 
           // Create a basic light, aiming 0,1,0 - meaning, to the sky.
           var light = new BABYLON.HemisphericLight(
@@ -73,10 +91,21 @@
           // Create a built-in "ground" shape.
           var ground = BABYLON.MeshBuilder.CreateGround(
             "ground1",
-            { height: 6, width: 6, subdivisions: 2 },
+            { height: 6, width: 40, subdivisions: 2 },
             scene
           );
 
+          var ground2 = BABYLON.MeshBuilder.CreateGround(
+            "ground1",
+            { height: 6, width: 40, subdivisions: 2 },
+            scene
+          );
+
+          ground.position.x = 15;
+          ground2.position.x = 60;
+
+
+          camera.lockedTarget = sphere
           /****************************Key Control Multiple Keys************************************************/
 
           var map = {}; //object for multiple key presses
@@ -103,13 +132,13 @@
           /****************************Move Sphere******************************************************/
 
           scene.registerAfterRender(function() {
-            if (map["w"] || map["W"]) {
-              sphere.position.z += 0.1;
-            }
+            // if (map["w"] || map["W"]) {
+            //   sphere.position.z += 0.1;
+            // }
 
-            if (map["s"] || map["S"]) {
-              sphere.position.z -= 0.1;
-            }
+            // if (map["s"] || map["S"]) {
+            //   sphere.position.z -= 0.1;
+            // }
 
             if (map["a"] || map["A"]) {
               sphere.position.x -= 0.1;
@@ -120,20 +149,22 @@
             }
 
             if (map["j"]) {
-              sphere.position.y += 0.9;
+              sphere.physicsImpostor.applyForce(forceDirection.scale(forceMagnitude), sphere.getAbsolutePosition().add(contactLocalRefPoint));
             }
           });
 
           // Physics
           //scene.enablePhysics(null, new BABYLON.CannonJSPlugin());
           //scene.enablePhysics(null, new BABYLON.OimoJSPlugin());
-          scene.enablePhysics(null, new BABYLON.AmmoJSPlugin());
+          var gravityVector = new BABYLON.Vector3(0,-29.81, 0);
+
+          scene.enablePhysics(gravityVector, new BABYLON.AmmoJSPlugin());
           var physicsEngine = scene.getPhysicsEngine();
 
           // Add Imposters
           sphere.physicsImpostor = new BABYLON.PhysicsImpostor(
             sphere,
-            BABYLON.PhysicsImpostor.BoxImpostor,
+            BABYLON.PhysicsImpostor.SphereImpostor,
             { mass: 2, friction: 0.0, restitution: 0.3 },
             scene
           );
@@ -143,6 +174,27 @@
             { mass: 0, friction: 0.0, restitution: 0.7 },
             scene
           );
+
+          ground2.physicsImpostor = new BABYLON.PhysicsImpostor(
+            ground2,
+            BABYLON.PhysicsImpostor.BoxImpostor,
+            { mass: 0, friction: 0.0, restitution: 0.7 },
+            scene
+          );
+
+          // //Impulse Settings
+          // var impulseDirection = new BABYLON.Vector3(0, 1, 0);
+          // var impulseMagnitude = 5;
+          // var contactLocalRefPoint = BABYLON.Vector3.Zero();
+
+          // var Pulse = function() {
+          //     sphere.physicsImpostor.applyImpulse(impulseDirection.scale(impulseMagnitude), box.getAbsolutePosition().add(contactLocalRefPoint));
+          // }
+
+          //Force Settings
+          var forceDirection = new BABYLON.Vector3(0, 10, 0);
+          var forceMagnitude = 50;
+          var contactLocalRefPoint = BABYLON.Vector3.Zero();
 
           // Return the created scene.
           return scene;
